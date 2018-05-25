@@ -28,10 +28,12 @@ SC_MODULE (bpi)
   bpi (sc_module_name nm);
 
   // Enum datatype defining constants
-  enum {addrGpsFrame = 10, addrGsmFrame = 11, frameSize = 100};
+  enum {frameSize = 128};
 
   //local variable
   char data[frameSize];
+  int addrGpsFrame;
+  int addrGsmFrame;;
 
 
   private:

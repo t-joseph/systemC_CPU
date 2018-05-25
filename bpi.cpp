@@ -16,6 +16,8 @@ using namespace std;
 bpi::bpi(sc_module_name nm)
            : socket("socket")  // Construct and name socket
 {
+  addrGpsFrame = 0;
+  addrGsmFrame = 128;
   SC_THREAD(bpiCpuRdGpsFrame);
   SC_THREAD(bpiBusWrGpsFrame);
   SC_THREAD(bpiCpuRdGsmFrame);
@@ -236,6 +238,15 @@ void bpi::bpiCpuWr()
       bpi_o->write(data[index]);
     }
     memset(data, 0, frameSize);
+
+    addrGpsFrame++;
+    addrGsmFrame++;
+
+    //To reset the memory index after wraparound
+    if(addrGpsFrame == 127)
+      addrGpsFrame = 0;
+    if(addrGsmFrame == 255)
+      addrGsmFrame = 128;
 
     bpiCpuRdGpsFrame_event.notify();
   }
