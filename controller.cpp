@@ -19,6 +19,10 @@ using namespace std;
 controller::controller(sc_module_name nm)
            : sc_module(nm)
   {
+    SC_METHOD(interProcess);
+    dont_initialize();
+    sensitive << intr_i.pos();
+
 	  SC_THREAD(sleep);
     SC_THREAD(gpsToCpuRdThread);
     SC_THREAD(cpuToGsmWrThread);
@@ -28,6 +32,12 @@ controller::controller(sc_module_name nm)
 
   } // End of Constructor
 
+void controller :: interProcess()
+{
+  interrupt_event.notify();
+}
+
+
 
 //sleep mode
 void controller:: sleep()
@@ -36,7 +46,7 @@ void controller:: sleep()
   {
     cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Entering Sleep Mode "
     <<endl;
-    wait(10000, SC_MS);
+    wait(10000, SC_MS, interrupt_event);
     cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Entering Active Mode "
     <<endl;
     gpsframe_read_event.notify();
@@ -69,6 +79,7 @@ void controller::gpsToCpuRdThread ()
       cpu_o->write(gpsFrame[i]);
     }
     gpsFrame.clear();
+    wait(300, SC_MS);
     gsmframe_request_event.notify();
   }
 }
@@ -80,8 +91,12 @@ void controller::cpuToGsmWrThread ()
   char request[] = "power?";
   while(1)
   {
+    if(intr_i)
+    {
+      gpsframe_read_event.notify();
+    }
 	  wait(gsmframe_request_event);
-    wait(100, SC_NS);
+    wait(100, SC_MS);
     cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Request for GSM frame to GSM mod"
     <<endl;
     for(i = 0; request[i]; i++)
@@ -99,14 +114,17 @@ void controller::gsmToCpuRdThread()
   int i;
   while(1)
   {
-  	wait(gsmframe_read_event);
-	  wait(200, SC_NS);
-    cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Reading GSM frame from GSM mod"
-    <<", num_available"<< gsm_i->num_available()
-    <<endl;
-    while(gsm_i->num_available() != 0)
+    if(intr_i)
     {
-	    gsmRd_f = gsm_i->read();
+      gpsframe_read_event.notify();
+    }
+  	wait(gsmframe_read_event);
+	  wait(400, SC_MS);
+    cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Reading GSM frame from GSM mod"
+    <<endl;
+    while(gsmInt_i->num_available() != 0)
+    {
+	    gsmRd_f = gsmInt_i->read();
       gsmFrame.push_back(gsmRd_f);
     }
     cout<<gsmFrame<<endl;
@@ -118,7 +136,7 @@ void controller::gsmToCpuRdThread()
       cpu_o->write(gsmFrame[i]);
     }
     gsmFrame.clear();
-    wait(800, SC_NS);
+    wait(1000, SC_MS);
     dataframe_gen_event.notify();
   }
 }
@@ -129,6 +147,10 @@ void controller::cpuCompThread()
 {
   while(1)
   {
+    if(intr_i)
+    {
+      gpsframe_read_event.notify();
+    }
 	  wait(dataframe_gen_event);
     cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Reading GPS frame from BPI"
     <<", num_available"<< cpu_i->num_available()
@@ -139,7 +161,7 @@ void controller::cpuCompThread()
       dataFrame.push_back(cpuRd_f);
     }
 
-    wait(500, SC_NS);
+    wait(200, SC_MS);
 
     cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Reading GSM frame from BPI"
     <<", num_available"<< cpu_i->num_available()
@@ -165,6 +187,10 @@ void controller::cpuToGsmDataFrameWrThread()
   int i;
   while(1)
   {
+    if(intr_i)
+    {
+      gpsframe_read_event.notify();
+    }
 	  wait(dataframe2gsm_write_event);
 	  cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Writing data frame to GSM mod"
     <<endl;
@@ -173,7 +199,7 @@ void controller::cpuToGsmDataFrameWrThread()
       gsm_o->write(dataFrame[i]);
     }
     dataFrame.clear();
-    wait(100, SC_NS);
+    wait(200, SC_MS);
     sleep_event.notify();
   }
 }

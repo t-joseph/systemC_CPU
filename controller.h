@@ -21,7 +21,7 @@ SC_MODULE (controller) {
 
   //input ports
   sc_port<sc_fifo_in_if<char> >     gps_i;      //
-  sc_port<sc_fifo_in_if<char> >     gsm_i;      //
+  sc_port<sc_fifo_in_if<char> >     gsmInt_i;      //
 
   //output ports
   sc_port<sc_fifo_out_if<char> >    gsm_o;      //
@@ -29,6 +29,8 @@ SC_MODULE (controller) {
   //Bus Periperal Interface Ports(part of CPU)
   sc_port<sc_fifo_in_if<char> >     cpu_i;       //
   sc_port<sc_fifo_out_if<char> >    cpu_o;       //
+
+  sc_in<bool>                      intr_i;
 
 /*
   //debug ports
@@ -57,6 +59,7 @@ SC_MODULE (controller) {
 
 
   // events
+  sc_event interrupt_event;
   sc_event sleep_event;
   sc_event user_request_event;
   sc_event gpsframe_read_event;
@@ -64,6 +67,9 @@ SC_MODULE (controller) {
   sc_event gsmframe_read_event;
   sc_event dataframe_gen_event;
   sc_event dataframe2gsm_write_event;
+
+  //interrupt generation
+  void interProcess();
 
   //sleep thread
   void sleep();

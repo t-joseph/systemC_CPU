@@ -18,6 +18,11 @@ bpi::bpi(sc_module_name nm)
 {
   addrGpsFrame = 0;
   addrGsmFrame = 128;
+
+  SC_METHOD(interProcess);
+  dont_initialize();
+  sensitive << intr_i.pos();
+
   SC_THREAD(bpiCpuRdGpsFrame);
   SC_THREAD(bpiBusWrGpsFrame);
   SC_THREAD(bpiCpuRdGsmFrame);
@@ -25,13 +30,20 @@ bpi::bpi(sc_module_name nm)
   SC_THREAD(bpiCpuWr);
 }
 
+
+void bpi :: interProcess()
+{
+  interrupt_event.notify();
+}
+
+
 void bpi::bpiCpuRdGpsFrame()
 {
-
   int index, availChar;
   while(1)
   {
-    wait(10500, SC_MS);
+    wait(10000, SC_MS, interrupt_event);
+    wait(800, SC_MS);
     availChar = bpi_i->num_available();
     memset(data, 0, frameSize);
     index = 0;
@@ -62,7 +74,7 @@ void bpi::bpiBusWrGpsFrame()
     wait(bpiBusWrGpsFrame_event);
     // TLM-2 generic payload transaction, reused across calls to b_transport
     tlm::tlm_generic_payload* trans = new tlm::tlm_generic_payload;
-    sc_time delay = sc_time(100, SC_NS);
+    sc_time delay = sc_time(10, SC_MS);
 
 
     tlm::tlm_command cmd = tlm::TLM_WRITE_COMMAND;
@@ -77,6 +89,8 @@ void bpi::bpiBusWrGpsFrame()
     trans->set_dmi_allowed( false ); // Mandatory initial value
     trans->set_response_status( tlm::TLM_INCOMPLETE_RESPONSE ); // Mandatory initial value
 
+    cout<<"@" << sc_time_stamp() <<" :: <bpi> Writing GPS frame to Memory"
+    <<endl;
 
     socket->b_transport( *trans, delay );  // Blocking transport call
 
@@ -99,7 +113,7 @@ void bpi::bpiCpuRdGsmFrame()
   while(1)
   {
     wait(bpiCpuRdGsmFrame_event);
-    wait(500, SC_NS);
+    wait(800, SC_MS);
     availChar = bpi_i->num_available();
     memset(data, 0, frameSize);
     index = 0;
@@ -132,7 +146,7 @@ void bpi::bpiBusWrGsmFrame()
     wait(bpiBusWrGsmFrame_event);
     // TLM-2 generic payload transaction, reused across calls to b_transport
     tlm::tlm_generic_payload* trans = new tlm::tlm_generic_payload;
-    sc_time delay = sc_time(100, SC_NS);
+    sc_time delay = sc_time(10, SC_MS);
 
     tlm::tlm_command cmd = tlm::TLM_WRITE_COMMAND;
 
@@ -145,6 +159,9 @@ void bpi::bpiBusWrGsmFrame()
     trans->set_byte_enable_ptr( 0 ); // 0 indicates unused
     trans->set_dmi_allowed( false ); // Mandatory initial value
     trans->set_response_status( tlm::TLM_INCOMPLETE_RESPONSE ); // Mandatory initial value
+
+    cout<<"@" << sc_time_stamp() <<" :: <bpi> Writing GSM frame to Memory"
+    <<endl;
 
     socket->b_transport( *trans, delay );  // Blocking transport call
 
@@ -171,7 +188,7 @@ void bpi::bpiCpuWr()
     wait(bpiCpuWr_event);
     // TLM-2 generic payload transaction, reused across calls to b_transport
     tlm::tlm_generic_payload* trans = new tlm::tlm_generic_payload;
-    sc_time delay = sc_time(100, SC_NS);
+    sc_time delay = sc_time(10, SC_MS);
 
 
     tlm::tlm_command cmd = tlm::TLM_READ_COMMAND;
@@ -185,6 +202,9 @@ void bpi::bpiCpuWr()
     trans->set_byte_enable_ptr( 0 ); // 0 indicates unused
     trans->set_dmi_allowed( false ); // Mandatory initial value
     trans->set_response_status( tlm::TLM_INCOMPLETE_RESPONSE ); // Mandatory initial value
+
+    cout<<"@" << sc_time_stamp() <<" :: <bpi> Reading GPS frame from Memory"
+    <<endl;
 
     socket->b_transport( *trans, delay );  // Blocking transport call
 
@@ -216,6 +236,9 @@ void bpi::bpiCpuWr()
     trans->set_byte_enable_ptr( 0 ); // 0 indicates unused
     trans->set_dmi_allowed( false ); // Mandatory initial value
     trans->set_response_status( tlm::TLM_INCOMPLETE_RESPONSE ); // Mandatory initial value
+
+    cout<<"@" << sc_time_stamp() <<" :: <bpi> Reading GSM frame from Memory"
+    <<endl;
 
     socket->b_transport( *trans, delay );  // Blocking transport call
 

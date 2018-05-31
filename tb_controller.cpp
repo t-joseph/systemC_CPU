@@ -53,15 +53,17 @@ void tb_controller:: test()
 
   string testGpsFrame;
   string testGsmFrame;
+  char userRequest[] = "TrackerId";
 
   int testCount = 9;
   int i = 0;
+  int index;
 
   ifstream myGpsFile ("tb_gps.txt");
   ifstream myGsmFile ("tb_gsm.txt");
   cout<<"************************************************************************"
   "******************************************************************************"
-  "**********************************************" <<endl;
+  "**********************************" <<endl;
   cout<<"@" << sc_time_stamp()<<" :: <TB> Entering TestBench" <<endl;
 
   if (myGpsFile.is_open() && myGsmFile.is_open())
@@ -74,10 +76,18 @@ void tb_controller:: test()
       <<i
       <<endl;
 
-      getline (myGpsFile,testGpsFrame);
-      for(int i = 0; testGpsFrame[i]; i++)
+      if(i == 2 || i == 7)
       {
-        tb_gps_o->write(testGpsFrame[i]);
+        for(index = 0; userRequest[index]; index++)
+        {
+          tb_gsm_o->write(userRequest[index]);
+        }
+      }
+
+      getline (myGpsFile,testGpsFrame);
+      for(index = 0; testGpsFrame[index]; index++)
+      {
+        tb_gps_o->write(testGpsFrame[index]);
       }
 
       while(1)
@@ -92,12 +102,12 @@ void tb_controller:: test()
       }
 
       getline (myGsmFile,testGsmFrame);
-      for(int i = 0; testGsmFrame[i]; i++)
+      for(index = 0; testGsmFrame[index]; index++)
       {
-        tb_gsm_o->write(testGsmFrame[i]);
+        tb_gsm_o->write(testGsmFrame[index]);
       }
 
-      wait(500, SC_MS);
+      wait(2000, SC_MS);
       while(tb_gsm_i->num_available() != 0)
       {
         tb_gsmRd_f = tb_gsm_i->read();
@@ -110,7 +120,7 @@ void tb_controller:: test()
       "**********************************************" <<endl;
       dataFrame.clear();
       testCount -= 1;
-
+      wait(200, SC_MS);
     }
   }
   myGpsFile.close();

@@ -4,6 +4,7 @@
 #include "tb_controller.h"
 #include "controller.h"
 #include "bpi.h"
+#include "interruptGen.h"
 
 
 using namespace sc_core;
@@ -19,8 +20,11 @@ SC_MODULE(top_controller)
 	sc_fifo<char> gps_f;
 	sc_fifo<char> gsm1_f;
 	sc_fifo<char> gsm2_f;
+	sc_fifo<char> gsm3_f;
 	sc_fifo<char> cpuBpi_f;
 	sc_fifo<char> bpiCpu_f;
+	sc_signal<bool> intr_ch1;
+	sc_signal<bool> intr_ch2;
 
 
 	SC_HAS_PROCESS(top_controller);
@@ -31,6 +35,7 @@ SC_MODULE(top_controller)
 	controller* cont;
 	tb_controller* tb_cont;
 	bpi* bpi_cont;
+	interruptGen* interruptGen_cont;
 };
 
 

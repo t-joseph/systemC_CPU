@@ -20,6 +20,8 @@ SC_MODULE (bpi)
   //output port
   sc_port<sc_fifo_out_if<char> >    bpi_o ;      //
 
+  sc_in<bool>                      intr_i;
+
   // TLM-2 socket, defaults to 32-bits wide, base protocol
   tlm_utils::simple_initiator_socket<bpi> socket;
 
@@ -42,6 +44,7 @@ SC_MODULE (bpi)
   sc_fifo<char> bpiRd_f;
 
   //events
+  sc_event interrupt_event;
   sc_event bpiCpuRdGpsFrame_event;
   sc_event bpiBusWrGpsFrame_event;
   sc_event bpiCpuRdGsmFrame_event;
@@ -49,6 +52,7 @@ SC_MODULE (bpi)
   sc_event bpiCpuWr_event;
 
   //thread functions
+  void interProcess();
   void bpiCpuRdGpsFrame();
   void bpiBusWrGpsFrame();
   void bpiCpuRdGsmFrame();
