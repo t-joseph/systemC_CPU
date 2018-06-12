@@ -9,6 +9,11 @@
 //---------------------------------------------------------------
 
 #include "controller.h"
+#include "debug_element.cpp"
+#include "decipher.cpp"
+#include "cipher.cpp"
+#include "key.h"
+
 
 using namespace sc_core;
 using namespace sc_dt;
@@ -17,18 +22,24 @@ using namespace std;
 // Constructor for the controller
 
 controller::controller(sc_module_name nm)
-           : sc_module(nm)
+           : sc_module(nm), dbg_write_buff(FIFO_LEN)
   {
+    id = 1;
     SC_METHOD(interProcess);
     dont_initialize();
     sensitive << intr_i.pos();
-
 	  SC_THREAD(sleep);
     SC_THREAD(gpsToCpuRdThread);
     SC_THREAD(cpuToGsmWrThread);
     SC_THREAD(gsmToCpuRdThread);
     SC_THREAD(cpuCompThread);
     SC_THREAD(cpuToGsmDataFrameWrThread);
+
+    SC_THREAD(Decipher_main);
+
+    SC_THREAD(Cipher_main);
+
+    SC_THREAD(THD_Debugg);
 
   } // End of Constructor
 
@@ -95,6 +106,7 @@ void controller::cpuToGsmWrThread ()
     {
       gpsframe_read_event.notify();
     }
+
 	  wait(gsmframe_request_event);
     wait(100, SC_MS);
     cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Request for GSM frame to GSM mod"
@@ -118,6 +130,7 @@ void controller::gsmToCpuRdThread()
     {
       gpsframe_read_event.notify();
     }
+
   	wait(gsmframe_read_event);
 	  wait(400, SC_MS);
     cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Reading GSM frame from GSM mod"
@@ -151,7 +164,13 @@ void controller::cpuCompThread()
     {
       gpsframe_read_event.notify();
     }
+
 	  wait(dataframe_gen_event);
+
+    sprintf(trackerId, "TrackerId%d", id);
+    id++;
+    dataFrame = trackerId;
+
     cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Reading GPS frame from BPI"
     <<", num_available"<< cpu_i->num_available()
     <<endl;
@@ -176,6 +195,9 @@ void controller::cpuCompThread()
     <<dataFrame
     <<endl;
 
+    if(id == 10)
+      id = 1;
+
     dataframe2gsm_write_event.notify();
   }
 }
@@ -191,13 +213,23 @@ void controller::cpuToGsmDataFrameWrThread()
     {
       gpsframe_read_event.notify();
     }
+
 	  wait(dataframe2gsm_write_event);
 	  cout<<"@" << sc_time_stamp() <<" :: <FuncBlock> Writing data frame to GSM mod"
     <<endl;
+
 	  for(i = 0; dataFrame[i]; i++)
     {
-      gsm_o->write(dataFrame[i]);
+      dbg_write_buff.write(dataFrame[i]);
+      if(dbgEn_i == 1 && dbg_write_buff.num_free() == 0)
+      {
+        decipher_security_event.notify();
+        wait(debug_element_return_event);
+      }
+      if(!dbgEn_i)
+        gsm_o->write(dbg_write_buff);
     }
+
     dataFrame.clear();
     wait(200, SC_MS);
     sleep_event.notify();

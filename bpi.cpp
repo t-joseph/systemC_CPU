@@ -17,7 +17,7 @@ bpi::bpi(sc_module_name nm)
            : socket("socket")  // Construct and name socket
 {
   addrGpsFrame = 0;
-  addrGsmFrame = 128;
+  addrGsmFrame = 64;
 
   SC_METHOD(interProcess);
   dont_initialize();
@@ -266,10 +266,10 @@ void bpi::bpiCpuWr()
     addrGsmFrame++;
 
     //To reset the memory index after wraparound
-    if(addrGpsFrame == 127)
+    if(addrGpsFrame == 63)
       addrGpsFrame = 0;
-    if(addrGsmFrame == 255)
-      addrGsmFrame = 128;
+    if(addrGsmFrame == 127)
+      addrGsmFrame = 64;
 
     bpiCpuRdGpsFrame_event.notify();
   }

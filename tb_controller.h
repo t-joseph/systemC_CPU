@@ -27,6 +27,14 @@ SC_MODULE (tb_controller) {
   sc_port<sc_fifo_out_if<char> >     tb_gps_o ;      //
   sc_port<sc_fifo_out_if<char> >     tb_gsm_o ;      //
 
+  //debug ports
+  sc_port<sc_fifo_out_if<char> >  tb_tdo;  //
+  sc_out<bool> 			              tb_dbgEn_o;       //
+  sc_port<sc_fifo_in_if<char> >   tb_tdi;  //
+  sc_out<bool> 			              tb_dbgCapture_o;  //
+  sc_out<bool> 			              tb_dbgUpdate_o;   //
+  sc_out<bool> 			              tb_dbgScan_o;     //
+
   //input ports
   sc_port<sc_fifo_in_if<char> >    tb_gsm_i ;     //
 
@@ -35,10 +43,11 @@ SC_MODULE (tb_controller) {
   // Local Variables
   string dataFrame;
   string gsmReq;
+  string debug;
 
-  enum { SIZE = 256};
+  enum { SIZE = 256, frameSize = 128};
 
-  char mem[SIZE][SIZE];
+  char mem[SIZE][frameSize];
 
   SC_HAS_PROCESS(tb_controller);
   tb_controller (sc_module_name nm);
@@ -48,8 +57,12 @@ SC_MODULE (tb_controller) {
   private:
   //signals
   sc_fifo<char> tb_gsmRd_f;
+  sc_fifo<char> tb_debug_f;
+  sc_event tb_debug_element_event;
+  sc_event tb_debug_element_return_event;
 
   void test();
+  void tb_debug();
 };
 
 #endif

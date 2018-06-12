@@ -13,6 +13,9 @@
 #include "systemc.h"
 #include <string>
 
+#define MOD_NAME controller
+#define FIFO_LEN 16
+
 using namespace std;
 
 SC_MODULE (controller) {
@@ -21,7 +24,7 @@ SC_MODULE (controller) {
 
   //input ports
   sc_port<sc_fifo_in_if<char> >     gps_i;      //
-  sc_port<sc_fifo_in_if<char> >     gsmInt_i;      //
+  sc_port<sc_fifo_in_if<char> >     gsmInt_i;   //
 
   //output ports
   sc_port<sc_fifo_out_if<char> >    gsm_o;      //
@@ -30,21 +33,24 @@ SC_MODULE (controller) {
   sc_port<sc_fifo_in_if<char> >     cpu_i;       //
   sc_port<sc_fifo_out_if<char> >    cpu_o;       //
 
+  //input from interrupt
   sc_in<bool>                      intr_i;
 
-/*
   //debug ports
-  sc_port<sc_fifo_in_if<char> >   dbg_i ;        //
+  sc_port<sc_fifo_in_if<char> >   dbg_i;  //
   sc_in<bool> 			              dbgEn_i;       //
-  sc_port<sc_fifo_out_if<char> >  dbg_o ;        //
+  sc_port<sc_fifo_out_if<char> >  dbg_o;  //
   sc_in<bool> 			              dbgCapture_i;  //
   sc_in<bool> 			              dbgUpdate_i;   //
   sc_in<bool> 			              dbgScan_i;     //
-*/
+
   // Local Variables
   string gpsFrame;
   string gsmFrame;
   string dataFrame;
+
+  char trackerId[16];
+  int id;
 
   // Constructor prototype
   SC_HAS_PROCESS(controller);
@@ -56,6 +62,12 @@ SC_MODULE (controller) {
   sc_fifo<char> gpsRd_f;
   sc_fifo<char> gsmRd_f;
   sc_fifo<char> cpuRd_f;
+  sc_fifo<char> dbg_write_buff;
+  sc_fifo<char> decipher_tdo;
+  sc_fifo<char> decipher_tdi;
+
+
+
 
 
   // events
@@ -67,6 +79,11 @@ SC_MODULE (controller) {
   sc_event gsmframe_read_event;
   sc_event dataframe_gen_event;
   sc_event dataframe2gsm_write_event;
+  sc_event cipher_security_event;
+  sc_event cipher_security_return_event;
+  sc_event decipher_security_event;
+  sc_event debug_element_event;
+  sc_event debug_element_return_event;
 
   //interrupt generation
   void interProcess();
@@ -88,6 +105,13 @@ SC_MODULE (controller) {
 
   // Write Data frame to Output FIFO(GSM)
   void cpuToGsmDataFrameWrThread(void);
+
+  //debug functionality
+  void THD_Debugg(void);
+
+  void Decipher_main(void);
+
+  void Cipher_main(void);
 };
 
 #endif

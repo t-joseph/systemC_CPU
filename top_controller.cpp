@@ -13,7 +13,7 @@ using namespace std;
 
 top_controller::top_controller(sc_module_name nm)
 	: sc_module(nm)
-	, gps_f(64), gsm1_f(46), gsm2_f(110), cpuBpi_f(64), bpiCpu_f(64)
+	, gps_f(64), gsm1_f(46), gsm2_f(110), cpuBpi_f(64), bpiCpu_f(64), top_tdi_f(16),top_tdo_f(16)
 {
 	cout << "ConstructorCPP - Top:" << name() << endl;
 
@@ -46,6 +46,19 @@ top_controller::top_controller(sc_module_name nm)
 
 	bpi_cont->intr_i(intr_ch2);
 	interruptGen_cont->intr2Bpi_o(intr_ch2);
+
+	cont->dbg_i(top_tdi_f);
+	tb_cont->tb_tdo(top_tdi_f);
+	cont->dbg_o(top_tdo_f);
+	tb_cont->tb_tdi(top_tdo_f);
+	cont->dbgEn_i(top_dbgEn_i);
+	tb_cont->tb_dbgEn_o(top_dbgEn_i);
+	cont->dbgCapture_i(top_dbgCapture_i);
+	tb_cont->tb_dbgCapture_o(top_dbgCapture_i);
+	cont->dbgUpdate_i(top_dbgUpdate_i);
+	tb_cont->tb_dbgUpdate_o(top_dbgUpdate_i);
+	cont->dbgScan_i(top_dbgScan_i);
+	tb_cont->tb_dbgScan_o(top_dbgScan_i);
 
 	// Bind initiator socket to target socket
 	bpi_cont->socket.bind( tb_cont->socket );

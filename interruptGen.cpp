@@ -13,19 +13,6 @@ interruptGen::interruptGen(sc_module_name nm)
 
   } // End of Constructor
 
-/*
-void interruptGen:: interruptDriveProcess()
-{
-  while(1)
-  {
-    if(gsm_i->num_available() != 0)
-    {
-      interruptActive_event.notify();
-    }
-    wait(1000);
-  }
-}
-*/
 
 //Interrupt generation
 void interruptGen:: interruptGenProcess()
@@ -37,8 +24,7 @@ void interruptGen:: interruptGenProcess()
     intr2Cont_o.write(0);
     intr2Bpi_o.write(0);
     availChar = gsm_i->num_available();
-    //cout<<"@" << sc_time_stamp() <<" :: <Intr> Interrupt Checker "
-    //<<endl;
+    
     while(gsm_i->num_available() != 0)
     {
       gsmRd_f = gsm_i->read();

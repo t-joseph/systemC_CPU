@@ -16,6 +16,16 @@ SC_MODULE(top_controller)
 {
 	public:
 
+
+	//debug ports
+
+	sc_signal<bool> intr_ch1;
+	sc_signal<bool> intr_ch2;
+  sc_signal<bool> 			              top_dbgEn_i;       //
+  sc_signal<bool> 			              top_dbgCapture_i;  //
+  sc_signal<bool> 			              top_dbgUpdate_i;   //
+  sc_signal<bool> 			              top_dbgScan_i;     //
+
 	//FIFOs/Signals
 	sc_fifo<char> gps_f;
 	sc_fifo<char> gsm1_f;
@@ -23,8 +33,8 @@ SC_MODULE(top_controller)
 	sc_fifo<char> gsm3_f;
 	sc_fifo<char> cpuBpi_f;
 	sc_fifo<char> bpiCpu_f;
-	sc_signal<bool> intr_ch1;
-	sc_signal<bool> intr_ch2;
+	sc_fifo<char> top_tdi_f;  //
+	sc_fifo<char> top_tdo_f;  //
 
 
 	SC_HAS_PROCESS(top_controller);

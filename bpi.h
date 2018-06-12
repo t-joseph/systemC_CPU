@@ -35,7 +35,7 @@ SC_MODULE (bpi)
   //local variable
   char data[frameSize];
   int addrGpsFrame;
-  int addrGsmFrame;;
+  int addrGsmFrame;
 
 
   private:

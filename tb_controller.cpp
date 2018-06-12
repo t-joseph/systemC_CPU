@@ -15,6 +15,7 @@ tb_controller::tb_controller(sc_module_name nm)
     // Register callback for incoming b_transport interface method call
     socket.register_b_transport(this, &tb_controller::b_transport);
     SC_THREAD(test);
+    SC_THREAD(tb_debug);
 
   } // End of Constructor
 
@@ -53,8 +54,7 @@ void tb_controller:: test()
 
   string testGpsFrame;
   string testGsmFrame;
-  char userRequest[] = "TrackerId";
-
+  char userRequest[] = "TrackerId8";
   int testCount = 9;
   int i = 0;
   int index;
@@ -76,7 +76,7 @@ void tb_controller:: test()
       <<i
       <<endl;
 
-      if(i == 2 || i == 7)
+      if(i == 2 || i == 7) //In testcase 2 and 7, generate user request interrupts
       {
         for(index = 0; userRequest[index]; index++)
         {
@@ -107,7 +107,16 @@ void tb_controller:: test()
         tb_gsm_o->write(testGsmFrame[index]);
       }
 
-      wait(2000, SC_MS);
+      if(i == 9)
+      {
+        tb_debug_element_event.notify();
+        wait(tb_debug_element_return_event);
+        wait(300, SC_MS);
+      }
+      else
+      {
+        wait(2000, SC_MS);
+      }
       while(tb_gsm_i->num_available() != 0)
       {
         tb_gsmRd_f = tb_gsm_i->read();
@@ -127,3 +136,42 @@ void tb_controller:: test()
   myGsmFile.close();
   sc_stop();
  }
+
+
+void tb_controller :: tb_debug()
+{
+  int index;
+  char debugOutput[] = "THIS IS A DBTEST";
+  while(1)
+  {
+    wait(tb_debug_element_event);
+    tb_dbgEn_o.write(1);
+    for(index = 0; debugOutput[index]; index++)
+    {
+      tb_tdo->write(debugOutput[index]);
+    }
+
+    tb_dbgCapture_o.write(1);
+    wait(1500, SC_MS);
+    tb_dbgScan_o.write(1);
+    wait(1500, SC_MS);
+    tb_dbgCapture_o.write(0);
+    tb_dbgUpdate_o.write(1);
+    wait(1500, SC_MS);
+    while(1)
+    {
+      tb_debug_f = tb_tdi->read();
+      debug.push_back(tb_debug_f);
+      if(tb_tdi->num_available() == 0)
+      {
+        break;
+      }
+    }
+    cout<<"@" << sc_time_stamp()<<" :: <TB - Debug> Debug Scan - "
+    <<debug<<endl;
+    tb_dbgScan_o.write(0);
+    tb_dbgEn_o.write(0);
+    tb_dbgUpdate_o.write(0);
+    tb_debug_element_return_event.notify();
+  }
+}
